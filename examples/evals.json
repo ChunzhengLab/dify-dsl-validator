@@ -1,0 +1,23 @@
+{
+  "skill_name": "validate-dsl",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我检查一下这个 DSL 文件能不能正常导入 Dify：examples/broken-sample.yml",
+      "expected_output": "识别出全部 17 处规范违规（控件类型、model.name、prompt 为空、role 非法、context 缺失、default-value 无配套、逻辑/比较运算符非法、Chatflow 里的 end 节点、空 outputs、UI 占位节点、parentId 悬空、user_action id 超长、slack 投递、悬空边、if-else 握手非法），按错误/警告分表报告并给出修复建议",
+      "files": ["examples/broken-sample.yml"]
+    },
+    {
+      "id": 2,
+      "prompt": "验证 scripts/stress-test/setup/dsl/workflow_llm.yml 是否符合当前 DSL 规范",
+      "expected_output": "报告通过，仅提示版本 0.4.0 低于当前 0.7.0、导入会带警告；不误报布局坐标等无关内容",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "我手写了一个 workflow DSL，麻烦看看有没有问题（文件在 scratchpad/minimal-workflow-dsl.yml）",
+      "expected_output": "机械层通过；判断层补充语义检查（value_selector 指向 llm 的 text 字段正确、依赖标识符提醒等），结论为符合规范",
+      "files": []
+    }
+  ]
+}

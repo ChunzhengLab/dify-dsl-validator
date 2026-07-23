@@ -1,0 +1,96 @@
+# 故意埋错的测试文件：预期检出 10+ 处错误
+version: 0.9.0                # 比当前新 → 警告
+kind: app
+app:
+  name: 坏例子
+  mode: advanced-chat
+workflow:
+  environment_variables: []
+  conversation_variables: []
+  features: {}
+  graph:
+    nodes:
+    - id: start_1
+      type: custom
+      position: {x: 0, y: 0}
+      data:
+        type: start
+        title: 开始
+        variables:
+        - variable: q
+          type: magic-input    # 错误：控件类型不合法 + 缺 label
+    - id: llm_1
+      type: custom
+      position: {x: 0, y: 0}
+      data:
+        type: llm
+        title: LLM
+        model:
+          provider: langgenius/openai/openai
+          # 错误：缺 model.name
+        prompt_template:
+        - role: wizard          # 错误：role 不合法
+          text: ''
+        # 错误：所有 text 为空且未开 memory；缺 context
+        error_strategy: default-value
+        # 错误：default-value 但没配 default_value
+    - id: if_1
+      type: custom
+      position: {x: 0, y: 0}
+      data:
+        type: if-else
+        title: 判断
+        cases:
+        - case_id: 'true'
+          logical_operator: maybe   # 错误：逻辑运算符不合法
+          conditions:
+          - variable_selector: [llm_1, text]
+            comparison_operator: resembles   # 错误：操作符不在枚举
+            value: hi
+    - id: end_1
+      type: custom
+      position: {x: 0, y: 0}
+      data:
+        type: end               # 错误：advanced-chat 里不允许 end
+        title: 结束
+        outputs: []             # 错误：outputs 为空
+    - id: ph_1
+      type: custom
+      position: {x: 0, y: 0}
+      data:
+        type: start-placeholder # 错误：纯 UI 占位节点
+        title: 占位
+    - id: hi_1
+      type: custom
+      position: {x: 0, y: 0}
+      parentId: nonexistent     # 错误：parentId 不存在
+      data:
+        type: human-input
+        title: 人工
+        user_actions:
+        - id: 这个id特别长超过二十个字符限制了绝对会超
+          title: 确认
+        # 错误：id 非标识符格式且超长
+        delivery_methods:
+        - type: slack           # 错误：后端不支持 slack
+          config: {}
+    edges:
+    - id: e1
+      type: custom
+      source: start_1
+      target: ghost_node        # 错误：target 不存在
+      sourceHandle: source
+      targetHandle: target
+    - id: e2
+      type: custom
+      source: if_1
+      target: llm_1
+      sourceHandle: else        # 错误：if-else 握手不合法
+      targetHandle: target
+    - id: e3
+      type: custom
+      source: llm_1
+      target: if_1
+      sourceHandle: source
+      targetHandle: target
+      data: {sourceType: code, targetType: if-else}  # 警告：sourceType 与实际不符

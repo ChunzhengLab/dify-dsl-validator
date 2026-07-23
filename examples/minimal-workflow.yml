@@ -1,0 +1,95 @@
+# 最小可用的 Dify Workflow DSL：开始 → LLM 翻译 → 结束
+# 手写要点：
+#   1. app.mode 是唯一会让导入直接报错的必填项
+#   2. 节点 id 是任意字符串，只要 edges 和变量引用里保持一致
+#   3. {{#节点id.变量名#}} 引用上游输出；value_selector 用 [节点id, 字段名]
+version: 0.7.0
+kind: app
+
+app:
+  name: 翻译助手
+  mode: workflow          # workflow / advanced-chat / chat / completion / agent-chat / agent
+  icon: 🌐
+  icon_background: '#FFEAD5'
+  description: 把输入文本翻译成英文
+
+# 用到的插件（模型 provider 也是插件）。标识符可从现有应用导出的 DSL 里抄
+dependencies:
+- type: marketplace
+  current_identifier: null
+  value:
+    marketplace_plugin_unique_identifier: langgenius/openai:0.2.5@373362a028986aae53a7baf73a7f11991ba3c22c69eaf97d6cde048cfd4a9f98
+
+workflow:
+  environment_variables: []
+  conversation_variables: []    # 仅 advanced-chat（Chatflow）会用到
+  features: {}                  # 文件上传、TTS 等开关，可全省
+  graph:
+    nodes:
+
+    - id: start_1
+      type: custom              # 画布层的固定值；真正的节点类型在 data.type
+      position: {x: 30, y: 245} # 只影响画布摆放，不影响执行
+      data:
+        type: start
+        title: 开始
+        variables:              # 这里定义应用的输入表单
+        - variable: source_text
+          label: 原文
+          type: paragraph       # text-input / paragraph / select / number / file...
+          required: true
+          max_length: 4000
+          options: []
+
+    - id: llm_1
+      type: custom
+      position: {x: 334, y: 245}
+      data:
+        type: llm
+        title: 翻译
+        model:
+          provider: langgenius/openai/openai
+          name: gpt-4o
+          mode: chat
+          completion_params:
+            temperature: 0.3
+        prompt_template:
+        - role: system
+          text: 你是专业翻译。把用户提供的文本翻译成英文，只输出译文。
+        - role: user
+          text: '{{#start_1.source_text#}}'   # 引用开始节点的输入变量
+        context:
+          enabled: false
+          variable_selector: []
+        vision:
+          enabled: false
+        variables: []
+
+    - id: end_1
+      type: custom
+      position: {x: 638, y: 245}
+      data:
+        type: end
+        title: 结束
+        outputs:
+        - variable: translation
+          value_type: string
+          value_selector: [llm_1, text]       # LLM 节点的输出字段固定叫 text
+
+    edges:
+    - id: start_1-llm_1
+      source: start_1
+      target: llm_1
+      sourceHandle: source
+      targetHandle: target
+      type: custom
+      data: {sourceType: start, targetType: llm, isInIteration: false, isInLoop: false}
+    - id: llm_1-end_1
+      source: llm_1
+      target: end_1
+      sourceHandle: source
+      targetHandle: target
+      type: custom
+      data: {sourceType: llm, targetType: end, isInIteration: false, isInLoop: false}
+
+    viewport: {x: 0, y: 0, zoom: 0.7}
