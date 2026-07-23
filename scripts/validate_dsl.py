@@ -26,11 +26,13 @@ import sys
 try:
     import yaml
 except ImportError:
-    if os.environ.get("DSL_VALIDATE_REEXEC") == "1":
-        print("ERROR: PyYAML unavailable even under uv; run inside an env with PyYAML.", file=sys.stderr)
+    script_path = globals().get("__file__")
+    if os.environ.get("DSL_VALIDATE_REEXEC") == "1" or not script_path or not os.path.exists(script_path):
+        print("ERROR: 缺少 PyYAML。请先 `pip install pyyaml`，或下载脚本后用 "
+              "`uv run --with pyyaml python validate_dsl.py <file>` 运行。", file=sys.stderr)
         sys.exit(2)
     os.environ["DSL_VALIDATE_REEXEC"] = "1"
-    os.execvp("uv", ["uv", "run", "--with", "pyyaml", "python", os.path.abspath(__file__), *sys.argv[1:]])
+    os.execvp("uv", ["uv", "run", "--with", "pyyaml", "python", os.path.abspath(script_path), *sys.argv[1:]])
 
 CURRENT_VERSION = (0, 7, 0)
 
